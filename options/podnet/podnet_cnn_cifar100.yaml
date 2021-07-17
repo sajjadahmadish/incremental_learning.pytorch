@@ -3,6 +3,9 @@ dataset: cifar100
 model: podnet
 convnet: rebuffi
 
+fixed_memory: true
+memory_size: 2000
+
 eval_type: cnn
 
 classifier_config:

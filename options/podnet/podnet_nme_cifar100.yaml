@@ -3,6 +3,9 @@ dataset: cifar100
 model: podnet
 convnet: rebuffi
 
+memory_size: 2000
+fixed_memory: true
+
 eval_type: nme
 
 classifier_config:
@@ -22,16 +25,6 @@ nca:
   margin: 0.6
   scale: 1.
   exclude_pos_denominator: true
-
-groupwise_factors:
-  old_weights: 0.
-
-finetuning_config:
-  sampling: undersampling
-  tuning: classifier
-  lr: 0.05
-  epochs: 20
-  scaling: null
 
 # Cosine Scheduling (CS)
 scheduling: cosine
