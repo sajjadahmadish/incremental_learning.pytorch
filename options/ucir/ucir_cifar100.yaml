@@ -39,7 +39,7 @@ scheduling:
   gamma: 0.1
 lr_decay: 0.1
 optimizer: sgd
-epochs: 160
+epochs: 1 #60
 
 weight_generation:
   type: imprinted

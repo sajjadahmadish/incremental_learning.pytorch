@@ -40,9 +40,8 @@ class UCIR(ICarl):
         self._eval_every_x_epochs = args.get("eval_every_x_epochs")
 
         self._use_mimic_score = args.get("mimic_score")
-        self._use_less_forget = args.get("less_forget")
-        self._lambda_schedule = args.get("lambda_schedule", True)
-        self._use_ranking = args.get("ranking_loss")
+        self._less_forget = args.get("less_forget")
+        self._ranking_loss = args.get("ranking_loss")
 
         self._network = network.BasicNet(
             args["convnet"],
@@ -62,10 +61,6 @@ class UCIR(ICarl):
 
         self._finetuning_config = args.get("finetuning_config")
 
-        self._lambda = args.get("base_lambda", 5)
-        self._nb_negatives = args.get("nb_negatives", 2)
-        self._margin = args.get("ranking_margin", 0.2)
-
         self._weight_generation = args.get("weight_generation")
 
         self._herding_indexes = []
@@ -78,6 +73,10 @@ class UCIR(ICarl):
 
         self._args = args
         self._args["_logs"] = {}
+
+        self._during_finetune = False
+        self._clip_classifier = None
+        self._align_weights_after_epoch = False
 
     def _after_task(self, inc_dataset):
         if "scale" not in self._args["_logs"]:
@@ -205,11 +204,11 @@ class UCIR(ICarl):
                 old_outputs = self._old_model(inputs)
                 old_features = old_outputs["raw_features"]
 
-            if self._use_less_forget:
-                if self._lambda_schedule:
-                    scheduled_lambda = self._lambda * math.sqrt(self._n_classes / self._task_size)
+            if self._less_forget:
+                if self._less_forget["scheduled_factor"]:
+                    scheduled_lambda = self._less_forget["lambda"] * math.sqrt(self._n_classes / self._task_size)
                 else:
-                    scheduled_lambda = 1.
+                    scheduled_lambda = self._less_forget["lambda"]
 
                 lessforget_loss = scheduled_lambda * losses.embeddings_similarity(
                     old_features, features
@@ -225,14 +224,14 @@ class UCIR(ICarl):
                 loss += mimic_loss
                 self._metrics["mimic"] += mimic_loss.item()
 
-            if self._use_ranking:
-                ranking_loss = losses.ucir_ranking(
+            if self._ranking_loss:
+                ranking_loss = self._ranking_loss["factor"] * losses.ucir_ranking(
                     logits,
                     targets,
                     self._n_classes,
                     self._task_size,
-                    nb_negatives=max(self._nb_negatives, self._task_size),
-                    margin=self._margin
+                    nb_negatives=min(self._ranking_loss["nb_negatives"], self._task_size),
+                    margin=self._ranking_loss["margin"]
                 )
                 loss += ranking_loss
                 self._metrics["rank"] += ranking_loss.item()
