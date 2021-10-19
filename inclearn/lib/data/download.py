@@ -8,7 +8,9 @@ logger = logging.getLogger(__name__)
 
 URLS = {
     "googlenews":
-    "https://github.com/eyaler/word2vec-slim/raw/master/GoogleNews-vectors-negative300-SLIM.bin.gz"
+        "https://github.com/eyaler/word2vec-slim/raw/master/GoogleNews-vectors-negative300-SLIM.bin.gz",
+    "modelNet40":
+        "https://shapenet.cs.stanford.edu/media/modelnet40_ply_hdf5_2048.zip"
 }
 
 
@@ -37,3 +39,15 @@ def _fetch_googlenews_word2vec(folder):
         f.write(decompressed_file.read())
 
     return output_file
+
+
+def fetch_modelnet40(root):
+    data_dir = os.path.join(root, 'data')
+    if not os.path.exists(data_dir):
+        os.mkdir(data_dir)
+    if not os.path.exists(os.path.join(data_dir, 'modelnet40_ply_hdf5_2048')):
+        www = URLS["modelNet40"]
+        zipfile = os.path.basename(www)
+        os.system('wget --no-check-certificate %s; unzip %s' % (www, zipfile))
+        os.system('mv %s %s' % (zipfile[:-4], data_dir))
+        os.system('rm %s' % zipfile)

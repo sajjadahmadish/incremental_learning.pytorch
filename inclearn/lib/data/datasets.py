@@ -7,6 +7,9 @@ import warnings
 
 import numpy as np
 from torchvision import datasets, transforms
+import torch.utils.data as data
+import h5py
+from inclearn.lib.data import fetch_modelnet40
 
 logger = logging.getLogger(__name__)
 
@@ -263,7 +266,7 @@ class AwA2(DataHandler):
             class_id = label_to_id[class_directory]
 
             for image_path in glob.iglob(
-                os.path.join(directory, "JPEGImages", class_directory, "*jpg")
+                    os.path.join(directory, "JPEGImages", class_directory, "*jpg")
             ):
                 data[class_id].append(image_path)
 
@@ -363,7 +366,7 @@ class CUB200(DataHandler):
             class_id = label_to_id[class_directory]
 
             for image_path in sorted(
-                os.listdir(os.path.join(directory, "images", class_directory))
+                    os.listdir(os.path.join(directory, "images", class_directory))
             ):
                 if not image_path.endswith("jpg"):
                     continue
@@ -548,5 +551,75 @@ class LAD(DataHandler):
 
         self.label_to_id, self.id_to_label = label_to_id, id_to_label
         print(f"{len(self.data)} images for {len(self.label_to_id)} classes.")
+
+        return self
+
+
+# ===============================================================================
+
+# ModelNet40
+
+# ===============================================================================
+
+
+def load_data(root, partition, download=True):
+    if download:
+        fetch_modelnet40(root)
+    all_data = []
+    all_label = []
+    g = sorted(glob.glob(os.path.join(root, 'ply_data_%s*.h5' % partition)))
+    for h5_file in g:
+        f = h5py.File(h5_file)
+        label = f['label'][:].astype('int64')
+        temp_data = f['data'][:].astype('float32')
+        f.close()
+        all_data.append(temp_data)
+        all_label.append(label)
+    all_data = np.concatenate(all_data, axis=0)
+    all_label = np.concatenate(all_label, axis=0)
+    return all_data, all_label
+
+
+class TranslatePointcloud(object):
+
+    def __init__(self, num_points=1024):
+        self.num_points = num_points
+
+    def __call__(self, sample):
+        xyz1 = np.random.uniform(low=2. / 3., high=3. / 2., size=[3])
+        xyz2 = np.random.uniform(low=-0.2, high=0.2, size=[3])
+
+        sample = sample[: self.num_points]
+
+        translated_pointcloud = np.add(np.multiply(sample, xyz1), xyz2).astype('float32')
+
+        np.random.shuffle(translated_pointcloud)
+        return translated_pointcloud
+
+
+class iModelNet40(DataHandler):
+    train_transforms = [TranslatePointcloud(1024)]
+    data = None
+    targets = None
+    label_to_id = None
+    id_to_label = None
+
+    def _create_class_mapping(self, path):
+        label_to_id = {}
+        self.class_order = []
+        with open(os.path.join(path, "shape_names.txt")) as f:
+            for i, line in enumerate(f):
+                ls = line.strip().split()
+                label_to_id[ls[0]] = int(ls[1])
+                self.class_order.append(i)  # Classes are already in the right order.
+
+        id_to_label = {v: k for k, v in label_to_id.items()}
+        return label_to_id, id_to_label
+
+    def base_dataset(self, root, train=True, download=True):
+        directory = os.path.join(root, 'modelnet40_ply_hdf5_2048')
+        self.data, self.targets = load_data(directory, partition='train' if train else 'test', download=download)
+
+        self.label_to_id, self.id_to_label = self._create_class_mapping(directory)
 
         return self
