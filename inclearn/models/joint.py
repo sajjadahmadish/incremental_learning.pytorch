@@ -107,7 +107,7 @@ class Joint(IncrementalLearner):
                 self._print_metrics(prog_bar, epoch, nb_epochs, i)
 
             if self._scheduler:
-                self._scheduler.step(epoch)
+                self._scheduler.step()
 
         if len(self._multiple_devices) == 1 and hasattr(training_network.convnet, "record_mode"):
             training_network.convnet.normal_mode()

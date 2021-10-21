@@ -598,7 +598,7 @@ class TranslatePointcloud(object):
             xyz2 = np.random.uniform(low=-0.2, high=0.2, size=[3])
             x = sample[: self.num_points]
             translated_pointcloud = np.add(np.multiply(x, xyz1), xyz2).astype('float32')
-            # np.random.shuffle(translated_pointcloud)
+            np.random.shuffle(translated_pointcloud)
             return translated_pointcloud
         else:
             return sample[: self.num_points]
