@@ -36,30 +36,32 @@ class IncrementalDataset:
     """
 
     def __init__(
-        self,
-        dataset_name,
-        random_order=False,
-        shuffle=True,
-        workers=10,
-        batch_size=128,
-        seed=1,
-        increment=10,
-        validation_split=0.,
-        onehot=False,
-        initial_increment=None,
-        sampler=None,
-        sampler_config=None,
-        data_path="data",
-        class_order=None,
-        dataset_transforms=None,
-        all_test_classes=False,
-        metadata_path=None
+            self,
+            dataset_name,
+            random_order=False,
+            shuffle=True,
+            workers=10,
+            batch_size=128,
+            seed=1,
+            increment=10,
+            validation_split=0.,
+            onehot=False,
+            initial_increment=None,
+            sampler=None,
+            sampler_config=None,
+            data_path="data",
+            class_order=None,
+            dataset_transforms=None,
+            all_test_classes=False,
+            metadata_path=None
     ):
         datasets = _get_datasets(dataset_name)
         if metadata_path:
             print("Adding metadata path {}".format(metadata_path))
             datasets[0].metadata_path = metadata_path
 
+        logger.debug(f'shuffle dataset {shuffle}')
+        logger.debug(f'workers {workers}')
         self._setup_data(
             datasets,
             random_order=random_order,
@@ -127,7 +129,6 @@ class IncrementalDataset:
             x_test, y_test = self._select(self.data_test, self.targets_test, high_range=max_class)
 
         if self._onehot:
-
             def to_onehot(x):
                 n = np.max(x) + 1
                 return np.eye(n)[x]
@@ -183,7 +184,7 @@ class IncrementalDataset:
         return x, y, memory_flags
 
     def get_custom_loader(
-        self, class_indexes, memory=None, mode="test", data_source="train", sampler=None
+            self, class_indexes, memory=None, mode="test", data_source="train", sampler=None
     ):
         """Returns a custom loader.
 
@@ -274,15 +275,15 @@ class IncrementalDataset:
         )
 
     def _setup_data(
-        self,
-        datasets,
-        random_order=False,
-        class_order=None,
-        seed=1,
-        increment=10,
-        validation_split=0.,
-        initial_increment=None,
-        data_path="data"
+            self,
+            datasets,
+            random_order=False,
+            class_order=None,
+            seed=1,
+            increment=10,
+            validation_split=0.,
+            initial_increment=None,
+            data_path="data"
     ):
         # FIXME: handles online loading of images
         self.data_train, self.targets_train = [], []

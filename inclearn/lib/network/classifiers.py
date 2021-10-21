@@ -216,7 +216,6 @@ class PointClassifier(nn.Module):
         self.dropout = nn.Dropout(p=0.3)
         self.bn1 = nn.BatchNorm1d(512)
         self.bn2 = nn.BatchNorm1d(256)
-        self.relu = nn.ReLU()
 
         self.to(device)
 
@@ -229,8 +228,7 @@ class PointClassifier(nn.Module):
     def forward(self, x):
         x = F.relu(self.bn1(self.fc1(x)))
         x = F.relu(self.bn2(self.dropout(self.fc2(x))))
-        x = self.fc3(x)
-        logits = F.log_softmax(x, dim=1)
+        logits = F.log_softmax(self.fc3(x), dim=1)
         return {"logits": logits}
 
     def add_classes(self, n_classes):

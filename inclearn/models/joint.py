@@ -86,6 +86,8 @@ class Joint(IncrementalLearner):
             )
             for i, input_dict in enumerate(prog_bar, start=1):
                 inputs, targets = input_dict["inputs"], input_dict["targets"]
+                if len(inputs) == 1:
+                    continue
 
                 if grad is not None:
                     _clean_list(grad)
@@ -120,6 +122,8 @@ class Joint(IncrementalLearner):
             **kwargs
     ):
         inputs, targets = inputs.to(self._device), targets.to(self._device)
+        # logger.debug(f'inputs: {inputs}')
+        logger.debug(f'targets: {targets}')
 
         outputs = training_network(inputs)
         if gradcam_act is not None:
@@ -143,6 +147,8 @@ class Joint(IncrementalLearner):
         return 100 * round(np.mean(ypred == ytrue), 3)
 
     def _eval_task(self, data_loader):
+        logger.debug("nb-test {}.".format(len(data_loader.dataset)))
+
         ypred = []
         ytrue = []
 

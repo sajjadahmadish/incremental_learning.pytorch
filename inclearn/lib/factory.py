@@ -88,7 +88,7 @@ def get_data(args, class_order=None):
     return data.IncrementalDataset(
         dataset_name=args["dataset"],
         random_order=args["random_classes"],
-        shuffle=True,
+        shuffle=args["shuffle"],
         batch_size=args["batch_size"],
         workers=args["workers"],
         validation_split=args["validation"],

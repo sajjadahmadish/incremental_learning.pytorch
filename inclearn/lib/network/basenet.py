@@ -48,6 +48,8 @@ class BasicNet(nn.Module):
         logger.info("Post processor is: {}".format(self.post_processor))
 
         self.convnet = factory.get_convnet(convnet_type, **convnet_kwargs)
+        logger.debug(f'convnet type: {convnet_type}')
+
 
         if "type" not in classifier_kwargs:
             raise ValueError("Specify a classifier!", classifier_kwargs)
@@ -67,6 +69,7 @@ class BasicNet(nn.Module):
             )
         else:
             raise ValueError("Unknown classifier type {}.".format(classifier_kwargs["type"]))
+        logger.debug(f'classifier type: {self.classifier.classifier_type}')
 
         if rotations_predictor:
             print("Using a rotations predictor.")

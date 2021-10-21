@@ -580,8 +580,9 @@ def load_data(root, partition, download=True):
 
 class TranslatePointcloud(object):
 
-    def __init__(self, num_points=1024):
+    def __init__(self, num_points=1024, train=True):
         self.num_points = num_points
+        self.train = train
 
     def __call__(self, sample):
         xyz1 = np.random.uniform(low=2. / 3., high=3. / 2., size=[3])
@@ -591,12 +592,16 @@ class TranslatePointcloud(object):
 
         translated_pointcloud = np.add(np.multiply(x, xyz1), xyz2).astype('float32')
 
-        np.random.shuffle(translated_pointcloud)
-        return translated_pointcloud
+        # np.random.shuffle(translated_pointcloud)
+        if self.train:
+            return translated_pointcloud
+        else:
+            return x
 
 
 class iModelNet40(DataHandler):
     train_transforms = [TranslatePointcloud(1024)]
+    test_transforms = [TranslatePointcloud(1024, False)]
     data = None
     targets = None
     label_to_id = None
