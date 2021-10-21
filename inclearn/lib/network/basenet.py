@@ -6,7 +6,7 @@ from torch import nn
 
 from inclearn.lib import factory
 
-from .classifiers import (Classifier, CosineClassifier, DomainClassifier, MCCosineClassifier)
+from .classifiers import (Classifier, CosineClassifier, DomainClassifier, MCCosineClassifier, PointClassifier)
 from .postprocessors import FactorScalar, HeatedUpScalar, InvertedFactorScalar
 from .word import Word2vec
 
@@ -16,20 +16,20 @@ logger = logging.getLogger(__name__)
 class BasicNet(nn.Module):
 
     def __init__(
-        self,
-        convnet_type,
-        convnet_kwargs={},
-        classifier_kwargs={},
-        postprocessor_kwargs={},
-        wordembeddings_kwargs={},
-        init="kaiming",
-        device=None,
-        return_features=False,
-        extract_no_act=False,
-        classifier_no_act=False,
-        attention_hook=False,
-        rotations_predictor=False,
-        gradcam_hook=False
+            self,
+            convnet_type,
+            convnet_kwargs={},
+            classifier_kwargs={},
+            postprocessor_kwargs={},
+            wordembeddings_kwargs={},
+            init="kaiming",
+            device=None,
+            return_features=False,
+            extract_no_act=False,
+            classifier_no_act=False,
+            attention_hook=False,
+            rotations_predictor=False,
+            gradcam_hook=False
     ):
         super(BasicNet, self).__init__()
 
@@ -59,6 +59,10 @@ class BasicNet(nn.Module):
             )
         elif classifier_kwargs["type"] == "mcdropout_cosine":
             self.classifier = MCCosineClassifier(
+                self.convnet.out_dim, device=device, **classifier_kwargs
+            )
+        elif classifier_kwargs["type"] == "pfc":
+            self.classifier = PointClassifier(
                 self.convnet.out_dim, device=device, **classifier_kwargs
             )
         else:
@@ -108,7 +112,7 @@ class BasicNet(nn.Module):
             self.post_processor.on_epoch_end()
 
     def forward(
-        self, x, rotation=False, index=None, features_processing=None, additional_features=None
+            self, x, rotation=False, index=None, features_processing=None, additional_features=None
     ):
         if hasattr(self,
                    "word_embeddings") and self.word_embeddings is not None and isinstance(x, list):
@@ -132,7 +136,7 @@ class BasicNet(nn.Module):
         if rotation:
             outputs["rotations"] = self.rotations_predictor(outputs["features"])
             nb_inputs = len(x) // 4
-            #for k in outputs.keys():
+            # for k in outputs.keys():
             #    if k != "rotations":
             #        if isinstance(outputs[k], list):
             #            outputs[k] = [elt[:32] for elt in outputs[k]]
@@ -223,7 +227,7 @@ class BasicNet(nn.Module):
         if hasattr(self.convnet, "last_block"):
             groups["last_block"] = self.convnet.last_block.parameters()
         if hasattr(self.classifier, "_negative_weights"
-                  ) and isinstance(self.classifier._negative_weights, nn.Parameter):
+                   ) and isinstance(self.classifier._negative_weights, nn.Parameter):
             groups["neg_weights"] = self.classifier._negative_weights
         if self.domain_classifier is not None:
             groups["domain_clf"] = self.domain_classifier.parameters()

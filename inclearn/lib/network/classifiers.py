@@ -19,15 +19,15 @@ class Classifier(nn.Module):
     classifier_type = "fc"
 
     def __init__(
-        self,
-        features_dim,
-        device,
-        *,
-        use_bias=False,
-        normalize=False,
-        init="kaiming",
-        train_negative_weights=False,
-        **kwargs
+            self,
+            features_dim,
+            device,
+            *,
+            use_bias=False,
+            normalize=False,
+            init="kaiming",
+            train_negative_weights=False,
+            **kwargs
     ):
         super().__init__()
 
@@ -90,7 +90,7 @@ class Classifier(nn.Module):
 
         weights = self.weights
         if self._negative_weights is not None and (
-            self.training is True or self.eval_negative_weights
+                self.training is True or self.eval_negative_weights
         ) and self.use_neg_weights:
             weights = torch.cat((weights, self._negative_weights), 0)
 
@@ -195,25 +195,68 @@ class Classifier(nn.Module):
             self._negative_weights = negative_weights
 
 
+class PointClassifier(nn.Module):
+    classifier_type = "pfc"
+
+    def __init__(
+            self,
+            features_dim,
+            device,
+            **kwargs
+    ):
+        super().__init__()
+
+        self.features_dim = features_dim
+        self.device = device
+        self.n_classes = 0
+
+        self.fc1 = nn.Linear(1024, 512)
+        self.fc2 = nn.Linear(512, 256)
+        self.fc3 = nn.Linear(256, features_dim)
+        self.dropout = nn.Dropout(p=0.3)
+        self.bn1 = nn.BatchNorm1d(512)
+        self.bn2 = nn.BatchNorm1d(256)
+        self.relu = nn.ReLU()
+
+        self.to(device)
+
+    def on_task_end(self):
+        pass
+
+    def on_epoch_end(self):
+        pass
+
+    def forward(self, x):
+        x = F.relu(self.bn1(self.fc1(x)))
+        x = F.relu(self.bn2(self.dropout(self.fc2(x))))
+        x = self.fc3(x)
+        logits = F.log_softmax(x, dim=1)
+        return {"logits": logits}
+
+    def add_classes(self, n_classes):
+        self.n_classes += n_classes
+        self.to(self.device)
+
+
 class CosineClassifier(nn.Module):
     classifier_type = "cosine"
 
     def __init__(
-        self,
-        features_dim,
-        device,
-        *,
-        proxy_per_class=1,
-        distance="cosine",
-        merging="softmax",
-        scaling=1,
-        gamma=1.,
-        use_bias=False,
-        type=None,
-        pre_fc=None,
-        negative_weights_bias=None,
-        train_negative_weights=False,
-        eval_negative_weights=False
+            self,
+            features_dim,
+            device,
+            *,
+            proxy_per_class=1,
+            distance="cosine",
+            merging="softmax",
+            scaling=1,
+            gamma=1.,
+            use_bias=False,
+            type=None,
+            pre_fc=None,
+            negative_weights_bias=None,
+            train_negative_weights=False,
+            eval_negative_weights=False
     ):
         super().__init__()
 
@@ -269,7 +312,7 @@ class CosineClassifier(nn.Module):
 
         weights = self.weights
         if self._negative_weights is not None and (
-            self.training is True or self.eval_negative_weights
+                self.training is True or self.eval_negative_weights
         ) and self.use_neg_weights:
             weights = torch.cat((weights, self._negative_weights), 0)
 
@@ -303,15 +346,15 @@ class CosineClassifier(nn.Module):
         else:
             similarities = raw_similarities
 
-            if self._negative_weights is not None and self.negative_weights_bias is not None and\
-               self.training is True:
+            if self._negative_weights is not None and self.negative_weights_bias is not None and \
+                    self.training is True:
                 qt = self._negative_weights.shape[0]
                 if isinstance(self.negative_weights_bias, float):
                     similarities[..., -qt:] = torch.clamp(
                         similarities[..., -qt:] - self.negative_weights_bias, min=0
                     )
                 elif isinstance(
-                    self.negative_weights_bias, str
+                        self.negative_weights_bias, str
                 ) and self.negative_weights_bias == "min":
                     min_simi = similarities[..., :-qt].min(dim=1, keepdim=True)[0]
                     similarities = torch.min(
@@ -319,7 +362,7 @@ class CosineClassifier(nn.Module):
                         torch.cat((similarities[..., :-qt], min_simi.repeat(1, qt)), dim=1)
                     )
                 elif isinstance(
-                    self.negative_weights_bias, str
+                        self.negative_weights_bias, str
                 ) and self.negative_weights_bias == "max":
                     max_simi = similarities[..., :-qt].max(dim=1, keepdim=True)[0] - 1e-6
                     similarities = torch.min(
@@ -453,7 +496,7 @@ class CosineClassifier(nn.Module):
         return self
 
     def add_imprinted_classes(
-        self, class_indexes, inc_dataset, network, multi_class_diff="normal", type=None
+            self, class_indexes, inc_dataset, network, multi_class_diff="normal", type=None
     ):
         if self.proxy_per_class > 1:
             logger.info("Multi class diff {}.".format(multi_class_diff))
@@ -486,7 +529,7 @@ class CosineClassifier(nn.Module):
                 else:
                     raise ValueError(
                         "Unknown multi class differentiation for imprinted weights: {}.".
-                        format(multi_class_diff)
+                            format(multi_class_diff)
                     )
 
         new_weights = torch.stack(new_weights)

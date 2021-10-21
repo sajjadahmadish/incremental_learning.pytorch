@@ -101,6 +101,8 @@ class LwF(IncrementalLearner):
         ypred, ytrue = self._eval_task(loader)
         ypred = ypred.argmax(dim=1)
 
+        correct = ypred.eq(ytrue.data).cpu().sum()
+
         return 100 * round(np.mean(ypred == ytrue), 3)
 
     def _forward_loss(self, training_network, inputs, targets, memory_flags, metrics):

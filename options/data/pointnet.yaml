@@ -1,0 +1,12 @@
+dataset: modelnet40
+
+data_path: ./data
+
+open_image: False
+
+convnet_config:
+  feature_transform: False
+  out_dim: 40
+
+classifier_config:
+  type: pfc

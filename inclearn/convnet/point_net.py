@@ -86,9 +86,9 @@ class STNkd(nn.Module):
         return x
 
 
-class PointNetfeat(nn.Module):
-    def __init__(self, global_feat=True, feature_transform=False):
-        super(PointNetfeat, self).__init__()
+class PointNetFeat(nn.Module):
+    def __init__(self, global_feat=True, **kwargs):
+        super(PointNetFeat, self).__init__()
         self.stn = STN3d()
         self.conv1 = torch.nn.Conv1d(3, 64, 1)
         self.conv2 = torch.nn.Conv1d(64, 128, 1)
@@ -97,11 +97,13 @@ class PointNetfeat(nn.Module):
         self.bn2 = nn.BatchNorm1d(128)
         self.bn3 = nn.BatchNorm1d(1024)
         self.global_feat = global_feat
-        self.feature_transform = feature_transform
+        self.feature_transform = kwargs['feature_transform']
         if self.feature_transform:
             self.fstn = STNkd(k=64)
+        self.out_dim = kwargs['out_dim']
 
     def forward(self, x):
+        x.transpose_(2, 1)
         n_pts = x.size()[2]
         trans = self.stn(x)
         x = x.transpose(2, 1)
@@ -123,123 +125,35 @@ class PointNetfeat(nn.Module):
         x = torch.max(x, 2, keepdim=True)[0]
         x = x.view(-1, 1024)
         if self.global_feat:
-            return x, trans, trans_feat
+            features = x
         else:
             x = x.view(-1, 1024, 1).repeat(1, 1, n_pts)
-            return torch.cat([x, pointfeat], 1), trans, trans_feat
+            features = torch.cat([x, pointfeat], 1)
+
+        return {"raw_features": features, "features": features, "attention": None, "trans_feat": trans_feat}
 
 
 class PointNetCls(nn.Module):
-    def __init__(self, k=2, feature_transform=False):
+    def __init__(self, device=None, **kwargs):
         super(PointNetCls, self).__init__()
-        self.feature_transform = feature_transform
-        self.feat = PointNetfeat(global_feat=True, feature_transform=feature_transform)
+        self.feature_transform = kwargs['feature_transform']
+        self.feat = PointNetFeat(global_feat=True, feature_transform=kwargs['feature_transform'])
         self.fc1 = nn.Linear(1024, 512)
         self.fc2 = nn.Linear(512, 256)
-        self.fc3 = nn.Linear(256, k)
+        self.fc3 = nn.Linear(256, kwargs['out_dim'])
         self.dropout = nn.Dropout(p=0.3)
         self.bn1 = nn.BatchNorm1d(512)
         self.bn2 = nn.BatchNorm1d(256)
         self.relu = nn.ReLU()
+        self.out_dim = kwargs['out_dim']
+        self.to(device)
 
     def forward(self, x):
+
         x, trans, trans_feat = self.feat(x)
         x = F.relu(self.bn1(self.fc1(x)))
         x = F.relu(self.bn2(self.dropout(self.fc2(x))))
         x = self.fc3(x)
-        return F.log_softmax(x, dim=1), trans, trans_feat
 
-
-def init_weights(m):
-    if type(m) == nn.Linear:
-        nn.init.xavier_uniform_(m.weight)
-        if m.bias is not None:
-            m.bias.data.fill_(0)
-
-
-class PointNetLwf(nn.Module):
-    def __init__(self, shared_model, k):
-        super(PointNetLwf, self).__init__()
-        for param in shared_model.parameters():
-            param.requires_grad = True
-        fc1 = shared_model.fc1
-        fc2 = shared_model.fc2
-        fc3 = shared_model.fc3
-        dropout = shared_model.dropout
-        bn1 = shared_model.bn1
-        bn2 = shared_model.bn2
-        self.shared_model = shared_model.feat
-
-        self.classifiers = nn.ModuleList([
-            nn.ModuleDict({
-                'fc1': fc1,
-                'bn1': bn1,
-                'dropout': dropout,
-                'fc2': fc2,
-                'bn2': bn2,
-                'fc3': fc3
-            }),
-            nn.ModuleDict({
-                'fc1': nn.Linear(fc1.in_features, 512),
-                'bn1': nn.BatchNorm1d(512),
-                'dropout': nn.Dropout(p=0.3),
-                'fc2': nn.Linear(512, 256),
-                'bn2': nn.BatchNorm1d(256),
-                'fc3': nn.Linear(256, k)
-            })
-        ])
-
-        self.classifiers[1].apply(init_weights)
-
-    def forward(self, x):
-        x, trans, trans_feat = self.shared_model(x)
-
-        # old
-        old = F.relu(self.classifiers[0].bn1(self.classifiers[0].fc1(x)))
-        old = F.relu(self.classifiers[0].bn2(self.classifiers[0].dropout(self.classifiers[0].fc2(old))))
-        feat = old
-        old = self.classifiers[0].fc3(old)
-
-        # new
-        new = F.relu(self.classifiers[1].bn1(self.classifiers[1].fc1(x)))
-        new = F.relu(self.classifiers[1].bn2(self.classifiers[1].dropout(self.classifiers[1].fc2(new))))
-        new = self.classifiers[1].fc3(new)
-        return F.log_softmax(old, dim=-1), F.log_softmax(new, dim=-1), feat, trans_feat
-
-
-class PointNetDenseCls(nn.Module):
-    def __init__(self, k=2, feature_transform=False):
-        super(PointNetDenseCls, self).__init__()
-        self.k = k
-        self.feature_transform = feature_transform
-        self.feat = PointNetfeat(global_feat=False, feature_transform=feature_transform)
-        self.conv1 = torch.nn.Conv1d(1088, 512, 1)
-        self.conv2 = torch.nn.Conv1d(512, 256, 1)
-        self.conv3 = torch.nn.Conv1d(256, 128, 1)
-        self.conv4 = torch.nn.Conv1d(128, self.k, 1)
-        self.bn1 = nn.BatchNorm1d(512)
-        self.bn2 = nn.BatchNorm1d(256)
-        self.bn3 = nn.BatchNorm1d(128)
-
-    def forward(self, x):
-        batchsize = x.size()[0]
-        n_pts = x.size()[2]
-        x, trans, trans_feat = self.feat(x)
-        x = F.relu(self.bn1(self.conv1(x)))
-        x = F.relu(self.bn2(self.conv2(x)))
-        x = F.relu(self.bn3(self.conv3(x)))
-        x = self.conv4(x)
-        x = x.transpose(2, 1).contiguous()
-        x = F.log_softmax(x.view(-1, self.k), dim=-1)
-        x = x.view(batchsize, n_pts, self.k)
-        return x, trans, trans_feat
-
-
-def feature_transform_regularizer(trans):
-    d = trans.size()[1]
-    I = torch.eye(d)[None, :, :]
-    if trans.is_cuda:
-        I = I.cuda()
-    loss = torch.mean(torch.norm(torch.bmm(trans, trans.transpose(2, 1)) - I, dim=(1, 2)))
-    return loss
-
+        pred = F.log_softmax(x, dim=1)
+        return {"raw_features": pred, "features": pred, "attention": None, "trans_feat": trans_feat}

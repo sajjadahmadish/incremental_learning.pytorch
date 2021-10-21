@@ -42,11 +42,8 @@ def _fetch_googlenews_word2vec(folder):
 
 
 def fetch_modelnet40(root):
-    data_dir = os.path.join(root, 'data')
-    if not os.path.exists(data_dir):
-        os.mkdir(data_dir)
-    if not os.path.exists(os.path.join(data_dir, 'modelnet40_ply_hdf5_2048')):
-        www = URLS["modelNet40"]
+    if not os.path.exists(root):
+        www = "https://shapenet.cs.stanford.edu/media/modelnet40_ply_hdf5_2048.zip"
         zipfile = os.path.basename(www)
         os.system('wget --no-check-certificate %s; unzip %s' % (www, zipfile))
         os.system('mv %s %s' % (zipfile[:-4], data_dir))

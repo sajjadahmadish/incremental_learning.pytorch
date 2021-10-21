@@ -6,7 +6,7 @@ from torch import optim
 from inclearn import models
 from inclearn.convnet import (
     densenet, my_resnet, my_resnet2, my_resnet_brn, my_resnet_mcbn, my_resnet_mtl, resnet,
-    resnet_mtl, ucir_resnet, vgg
+    resnet_mtl, ucir_resnet, vgg, point_net
 )
 from inclearn.lib import data, schedulers
 
@@ -53,14 +53,15 @@ def get_convnet(convnet_type, **kwargs):
         return my_resnet_mtl.resnet_rebuffi(**kwargs)
     elif convnet_type == "vgg19":
         return vgg.vgg19_bn(**kwargs)
-
+    elif convnet_type == "pointnet":
+        return point_net.PointNetFeat(**kwargs)
     raise NotImplementedError("Unknwon convnet type {}.".format(convnet_type))
 
 
 def get_model(args):
     dict_models = {
         "icarl": models.ICarl,
-        "lwf": None,
+        "lwf": models.LwF,
         "e2e": models.End2End,
         "fixed": None,
         "oracle": None,
@@ -69,7 +70,8 @@ def get_model(args):
         "podnet": models.PODNet,
         "lwm": models.LwM,
         "zil": models.ZIL,
-        "gdumb": models.GDumb
+        "gdumb": models.GDumb,
+        "joint": models.Joint,
     }
 
     model = args["model"].lower()

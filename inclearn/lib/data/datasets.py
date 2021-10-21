@@ -7,9 +7,7 @@ import warnings
 
 import numpy as np
 from torchvision import datasets, transforms
-import torch.utils.data as data
 import h5py
-from inclearn.lib.data import fetch_modelnet40
 
 logger = logging.getLogger(__name__)
 
@@ -563,8 +561,8 @@ class LAD(DataHandler):
 
 
 def load_data(root, partition, download=True):
-    if download:
-        fetch_modelnet40(root)
+    # if download:
+        # fetch_modelnet40(root)
     all_data = []
     all_label = []
     g = sorted(glob.glob(os.path.join(root, 'ply_data_%s*.h5' % partition)))
@@ -589,9 +587,9 @@ class TranslatePointcloud(object):
         xyz1 = np.random.uniform(low=2. / 3., high=3. / 2., size=[3])
         xyz2 = np.random.uniform(low=-0.2, high=0.2, size=[3])
 
-        sample = sample[: self.num_points]
+        x = sample[: self.num_points]
 
-        translated_pointcloud = np.add(np.multiply(sample, xyz1), xyz2).astype('float32')
+        translated_pointcloud = np.add(np.multiply(x, xyz1), xyz2).astype('float32')
 
         np.random.shuffle(translated_pointcloud)
         return translated_pointcloud
@@ -610,13 +608,13 @@ class iModelNet40(DataHandler):
         with open(os.path.join(path, "shape_names.txt")) as f:
             for i, line in enumerate(f):
                 ls = line.strip().split()
-                label_to_id[ls[0]] = int(ls[1])
+                label_to_id[ls[0]] = i
                 self.class_order.append(i)  # Classes are already in the right order.
 
         id_to_label = {v: k for k, v in label_to_id.items()}
         return label_to_id, id_to_label
 
-    def base_dataset(self, root, train=True, download=True):
+    def base_dataset(self, root, train=True, download=False):
         directory = os.path.join(root, 'modelnet40_ply_hdf5_2048')
         self.data, self.targets = load_data(directory, partition='train' if train else 'test', download=download)
 

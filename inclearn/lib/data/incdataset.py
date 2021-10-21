@@ -423,9 +423,11 @@ class DummyDataset(torch.utils.data.Dataset):
         if self.open_image:
             img = Image.open(x).convert("RGB")
         else:
-            img = Image.fromarray(x.astype("uint8"))
+            # img = Image.fromarray(x.astype("uint8"))
+            img = x
 
-        img = self.trsf(img)
+        img = self.trsf(img)[0]
+
         return {"inputs": img, "targets": y, "memory_flags": memory_flag}
 
 
