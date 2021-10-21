@@ -559,10 +559,18 @@ class LAD(DataHandler):
 
 # ===============================================================================
 
+def fetch_modelnet40(root):
+    if not os.path.exists(root):
+        www = "https://shapenet.cs.stanford.edu/media/modelnet40_ply_hdf5_2048.zip"
+        zipfile = os.path.basename(www)
+        os.system('wget --no-check-certificate %s; unzip %s' % (www, zipfile))
+        os.system('mv %s %s' % (zipfile[:-4], root))
+        os.system('rm %s' % zipfile)
+
 
 def load_data(root, partition, download=True):
-    # if download:
-        # fetch_modelnet40(root)
+    if download:
+        fetch_modelnet40(root)
     all_data = []
     all_label = []
     g = sorted(glob.glob(os.path.join(root, 'ply_data_%s*.h5' % partition)))
@@ -585,18 +593,15 @@ class TranslatePointcloud(object):
         self.train = train
 
     def __call__(self, sample):
-        xyz1 = np.random.uniform(low=2. / 3., high=3. / 2., size=[3])
-        xyz2 = np.random.uniform(low=-0.2, high=0.2, size=[3])
-
-        x = sample[: self.num_points]
-
-        translated_pointcloud = np.add(np.multiply(x, xyz1), xyz2).astype('float32')
-
-        # np.random.shuffle(translated_pointcloud)
         if self.train:
+            xyz1 = np.random.uniform(low=2. / 3., high=3. / 2., size=[3])
+            xyz2 = np.random.uniform(low=-0.2, high=0.2, size=[3])
+            x = sample[: self.num_points]
+            translated_pointcloud = np.add(np.multiply(x, xyz1), xyz2).astype('float32')
+            # np.random.shuffle(translated_pointcloud)
             return translated_pointcloud
         else:
-            return x
+            return sample[: self.num_points]
 
 
 class iModelNet40(DataHandler):

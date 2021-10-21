@@ -123,7 +123,7 @@ class Joint(IncrementalLearner):
     ):
         inputs, targets = inputs.to(self._device), targets.to(self._device)
         # logger.debug(f'inputs: {inputs}')
-        logger.debug(f'targets: {targets}')
+        # logger.debug(f'targets: {targets}')
 
         outputs = training_network(inputs)
         if gradcam_act is not None:

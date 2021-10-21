@@ -46,5 +46,5 @@ def fetch_modelnet40(root):
         www = "https://shapenet.cs.stanford.edu/media/modelnet40_ply_hdf5_2048.zip"
         zipfile = os.path.basename(www)
         os.system('wget --no-check-certificate %s; unzip %s' % (www, zipfile))
-        os.system('mv %s %s' % (zipfile[:-4], data_dir))
+        os.system('mv %s %s' % (zipfile[:-4], root))
         os.system('rm %s' % zipfile)
