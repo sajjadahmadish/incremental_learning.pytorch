@@ -18,6 +18,6 @@ convnet_config:
   feature_transform: False
 
 classifier_config:
-  type: pfc
+  type: fc
 
 optimizer: adam
