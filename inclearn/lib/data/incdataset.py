@@ -250,7 +250,8 @@ class IncrementalDataset:
         elif mode == "flip":
             trsf = transforms.Compose(
                 [
-                    transforms.RandomHorizontalFlip(p=1.), *self.test_transforms,
+                    # transforms.RandomHorizontalFlip(p=1.),
+                    *self.test_transforms,
                     *self.common_transforms
                 ]
             )
