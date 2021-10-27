@@ -1,0 +1,59 @@
+model: ucir
+
+dataset: modelnet40
+
+data_path: ./data
+
+convnet: pointnet
+
+open_image: False
+shuffle: False
+workers: 0
+lr: 0.001
+lr-decay: 0.5
+weight-decay: 0
+
+order:
+ - [2, 3, 4, 10, 14, 17, 19, 21, 22, 26, 27, 28, 29, 30, 31, 32, 33, 35, 36, 39, 5, 16, 23, 25, 37, 9, 12, 13, 20, 24, 0, 1, 6, 34, 38, 7, 8, 11, 15, 18]
+
+convnet_config:
+  feature_transform: False
+  last_relu: false
+
+classifier_config:
+  scaling: 1
+  gamma: 1
+  type: cosine
+  proxy_per_class: 1
+  distance: neg_stable_cosine_distance
+
+optimizer: adam
+
+epochs:
+  - 2
+  - 1
+
+
+
+memory_size: 2000
+fixed_memory: True
+
+
+less_forget:
+  scheduled_factor: true
+  lambda: 5
+
+postprocessor_config:
+  initial_value: 1.0
+  type: learned_scaling
+
+ranking_loss:
+  factor: 1.0
+  nb_negatives: 2
+  margin: 0.5
+
+finetuning_config:
+  tuning: classifier
+  lr: 0.05
+  epochs: 20
+

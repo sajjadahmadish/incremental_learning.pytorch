@@ -149,7 +149,8 @@ class UCIR(ICarl):
             if p.requires_grad:
                 p.register_hook(lambda grad: torch.clamp(grad, -5., 5.))
 
-        self._training_step(train_loader, val_loader, 0, self._n_epochs)
+        epoch = self._n_epochs[0] if self._task == 0 else self._n_epochs[1]
+        self._training_step(train_loader, val_loader, 0, epoch)
 
         if self._finetuning_config and self._task != 0:
             logger.info("Fine-tuning")
@@ -187,8 +188,8 @@ class UCIR(ICarl):
             self._training_step(
                 loader,
                 val_loader,
-                self._n_epochs,
-                self._n_epochs + self._finetuning_config["epochs"],
+                self._n_epochs[1],
+                self._n_epochs[1] + self._finetuning_config["epochs"],
                 record_bn=False
             )
 

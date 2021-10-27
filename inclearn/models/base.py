@@ -113,8 +113,8 @@ class IncrementalLearner(abc.ABC):
         logger.info(f"Loading model at {path}.")
         try:
             self.network.load_state_dict(torch.load(path))
-        except Exception:
-            logger.warning("Old method to save weights, it's deprecated!")
+        except Exception as e:
+            logger.warning(f"Old method to save weights, it's deprecated!: {e}")
             self._network = torch.load(path)
 
     def eval(self):
