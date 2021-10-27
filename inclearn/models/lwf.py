@@ -66,12 +66,13 @@ class LwF(IncrementalLearner):
             )
 
     def _train_task(self, train_loader, val_loader):
+        epoch = self._n_epochs[0] if self._task == 0 else self._n_epochs[1]
         loops.single_loop(
             train_loader,
             val_loader,
             self._multiple_devices,
             self._network,
-            self._n_epochs,
+            epoch,
             self._optimizer,
             scheduler=self._scheduler,
             train_function=self._forward_loss,

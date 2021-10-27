@@ -21,3 +21,7 @@ classifier_config:
   type: fc
 
 optimizer: adam
+
+epochs:
+  - 2
+  - 1

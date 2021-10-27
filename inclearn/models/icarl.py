@@ -183,7 +183,8 @@ class ICarl(IncrementalLearner):
 
     def _train_task(self, train_loader, val_loader):
         logger.debug("nb {}.".format(len(train_loader.dataset)))
-        self._training_step(train_loader, val_loader, 0, self._n_epochs)
+        epoch = self._n_epochs[0] if self._task == 0 else self._n_epochs[1]
+        self._training_step(train_loader, val_loader, 0, epoch)
 
     def _training_step(
         self, train_loader, val_loader, initial_epoch, nb_epochs, record_bn=True, clipper=None
