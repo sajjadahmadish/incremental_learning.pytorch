@@ -22,6 +22,8 @@ class LwF(IncrementalLearner):
     """
 
     def __init__(self, args):
+        super().__init__()
+
         self._device = args["device"][0]
         self._multiple_devices = args["device"]
 
@@ -75,7 +77,8 @@ class LwF(IncrementalLearner):
             train_function=self._forward_loss,
             eval_function=self._accuracy,
             task=self._task,
-            n_tasks=self._n_tasks
+            n_tasks=self._n_tasks,
+            skip_last_batch_if_one=True
         )
 
     def _after_task(self, inc_dataset):
@@ -101,11 +104,9 @@ class LwF(IncrementalLearner):
         ypred, ytrue = self._eval_task(loader)
         ypred = ypred.argmax(dim=1)
 
-        correct = ypred.eq(ytrue.data).cpu().sum()
-
         return 100 * round(np.mean(ypred == ytrue), 3)
 
-    def _forward_loss(self, training_network, inputs, targets, memory_flags, metrics):
+    def _forward_loss(self, training_network, inputs, targets, memory_flags, metrics, **kwargs):
         inputs, targets = inputs.to(self._device), targets.to(self._device)
         onehot_targets = utils.to_onehot(targets, self._n_classes).to(self._device)
 
@@ -145,11 +146,11 @@ class LwF(IncrementalLearner):
                 proba[..., :-self._task_size], self._distillation_config["temperature"]
             )
             modified_old_proba = torch.pow(
-                old_proba[..., :-self._task_size], self._distillation_config["temperature"]
+                old_proba, self._distillation_config["temperature"]
             )
 
-            modified_proba = modified_proba / modified_proba.sum(-1)
-            modified_old_proba = modified_old_proba / modified_old_proba.sum(-1)
+            modified_proba = modified_proba / modified_proba.sum(0)
+            modified_old_proba = modified_old_proba / modified_old_proba.sum(0)
 
             distill_loss = self._distillation_config["factor"] * F.binary_cross_entropy_with_logits(
                 modified_proba, modified_old_proba

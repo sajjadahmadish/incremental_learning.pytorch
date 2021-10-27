@@ -372,7 +372,7 @@ class IncrementalDataset:
     @staticmethod
     def _map_new_class_index(y, order):
         """Transforms targets for new class order."""
-        return np.array(list(map(lambda x: order.index(x), y)))
+        return np.array(list(map(lambda x: order.index(x), y)), dtype=np.int64)
 
     @staticmethod
     def _split_per_class(x, y, validation_split=0.):

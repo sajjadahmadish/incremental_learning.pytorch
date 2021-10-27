@@ -11,21 +11,22 @@ logger = logging.getLogger(__name__)
 
 
 def single_loop(
-    train_loader,
-    val_loader,
-    devices,
-    network,
-    n_epochs,
-    optimizer,
-    train_function,
-    eval_function,
-    task,
-    n_tasks,
-    scheduler=None,
-    disable_progressbar=False,
-    eval_every_x_epochs=None,
-    config=None,
-    early_stopping=None
+        train_loader,
+        val_loader,
+        devices,
+        network,
+        n_epochs,
+        optimizer,
+        train_function,
+        eval_function,
+        task,
+        n_tasks,
+        scheduler=None,
+        disable_progressbar=False,
+        eval_every_x_epochs=None,
+        config=None,
+        early_stopping=None,
+        skip_last_batch_if_one=False
 ):
     best_epoch, best_acc = -1, -1.
     wait = 0
@@ -53,6 +54,8 @@ def single_loop(
         )
         for batch_index, input_dict in enumerate(prog_bar, start=1):
             inputs, targets = input_dict["inputs"], input_dict["targets"]
+            if len(inputs) == 1 and skip_last_batch_if_one:
+                continue
             memory_flags = input_dict["memory_flags"]
 
             if grad is not None:

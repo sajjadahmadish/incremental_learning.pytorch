@@ -223,6 +223,10 @@ class ICarl(IncrementalLearner):
                 inputs, targets = input_dict["inputs"], input_dict["targets"]
                 memory_flags = input_dict["memory_flags"]
 
+                if len(inputs) == 1:
+                    logger.debug('memory_flags: {}'.format(memory_flags))
+                    continue
+
                 if grad is not None:
                     _clean_list(grad)
                     _clean_list(act)

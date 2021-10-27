@@ -599,9 +599,9 @@ class TranslatePointcloud(object):
             x = sample[: self.num_points]
             translated_pointcloud = np.add(np.multiply(x, xyz1), xyz2).astype('float32')
             np.random.shuffle(translated_pointcloud)
-            return translated_pointcloud
+            return translated_pointcloud.transpose(1, 0)
         else:
-            return sample[: self.num_points]
+            return sample[: self.num_points].transpose(1, 0)
 
 
 class iModelNet40(DataHandler):

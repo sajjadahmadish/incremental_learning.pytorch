@@ -100,10 +100,15 @@ class PointNetFeat(nn.Module):
         self.feature_transform = kwargs['feature_transform']
         if self.feature_transform:
             self.fstn = STNkd(k=64)
-        self.out_dim = kwargs['out_dim']
+        self.fc1 = nn.Linear(1024, 512)
+        self.fc2 = nn.Linear(512, 256)
+        self.dropout = nn.Dropout(p=0.3)
+        self.bn4 = nn.BatchNorm1d(512)
+        self.bn5 = nn.BatchNorm1d(256)
+        self.out_dim = 256
 
     def forward(self, x):
-        x.transpose_(2, 1)
+        # x.transpose_(2, 1)
         n_pts = x.size()[2]
         trans = self.stn(x)
         x = x.transpose(2, 1)
@@ -130,6 +135,8 @@ class PointNetFeat(nn.Module):
             x = x.view(-1, 1024, 1).repeat(1, 1, n_pts)
             features = torch.cat([x, pointfeat], 1)
 
+        features = F.relu(self.bn4(self.fc1(features)))
+        features = F.relu(self.bn5(self.dropout(self.fc2(features))))
         return {"raw_features": features, "features": features, "attention": None, "trans_feat": trans_feat}
 
 

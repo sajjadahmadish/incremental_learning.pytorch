@@ -1,4 +1,5 @@
 
 
 distillation_config:
-  temperature: 2
+  temperature: 1
+  factor: 0.4
