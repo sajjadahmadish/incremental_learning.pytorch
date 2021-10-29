@@ -57,6 +57,7 @@ class ICarl(IncrementalLearner):
         self._memory_size = args["memory_size"]
         self._fixed_memory = args["fixed_memory"]
         self._herding_selection = args.get("herding_selection", {"type": "icarl"})
+        logger.debug(f'herding_selection is {self._herding_selection}')
         self._n_classes = 0
         self._last_results = None
         self._validation_percent = args["validation"]

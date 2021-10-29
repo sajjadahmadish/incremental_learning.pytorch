@@ -130,6 +130,7 @@ class UCIR(ICarl):
         self._gen_weights()
 
         self._n_classes += self._task_size
+        self._network.add_classes(self._task_size)
         print("Now {} examplars per class.".format(self._memory_per_class))
 
         self._optimizer = factory.get_optimizer(
