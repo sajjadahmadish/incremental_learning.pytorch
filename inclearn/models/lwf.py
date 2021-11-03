@@ -36,7 +36,7 @@ class LwF(IncrementalLearner):
 
         self._distillation_config = args["distillation_config"]
 
-        logger.info("Initializing LwM")
+        logger.info("Initializing LwF")
 
         self._network = network.BasicNet(
             args["convnet"],
@@ -66,6 +66,7 @@ class LwF(IncrementalLearner):
             )
 
     def _train_task(self, train_loader, val_loader):
+        logger.debug("nb {}.".format(len(train_loader.dataset)))
         epoch = self._n_epochs[0] if self._task == 0 else self._n_epochs[1]
         loops.single_loop(
             train_loader,

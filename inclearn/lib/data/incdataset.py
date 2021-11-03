@@ -53,7 +53,9 @@ class IncrementalDataset:
             class_order=None,
             dataset_transforms=None,
             all_test_classes=False,
-            metadata_path=None
+            metadata_path=None,
+            few_shot=False,
+            few_samples=5
     ):
         datasets = _get_datasets(dataset_name)
         if metadata_path:
@@ -91,6 +93,8 @@ class IncrementalDataset:
         self._sampler = sampler
         self._sampler_config = sampler_config
         self._all_test_classes = all_test_classes
+        self.few_samples = few_samples
+        self.few_shot = few_shot
 
     @property
     def n_tasks(self):
@@ -110,6 +114,10 @@ class IncrementalDataset:
         x_train, y_train = self._select(
             self.data_train, self.targets_train, low_range=min_class, high_range=max_class
         )
+
+        if self.few_shot and self._current_task > 0:
+            x_train, y_train = self.find_few_indexes(x_train, y_train, low_range=min_class, high_range=max_class)
+
         nb_new_classes = len(np.unique(y_train))
         x_val, y_val = self._select(
             self.data_val, self.targets_val, low_range=min_class, high_range=max_class
@@ -238,8 +246,18 @@ class IncrementalDataset:
             data, targets, np.ones((data.shape[0],)), shuffle=True, mode="train"
         )
 
-    def _select(self, x, y, low_range=0, high_range=0):
+    @staticmethod
+    def _select(x, y, low_range=0, high_range=0):
         idxes = np.where(np.logical_and(y >= low_range, y < high_range))[0]
+        return x[idxes], y[idxes]
+
+    def find_few_indexes(self, x, y, low_range=0, high_range=0):
+        c = np.zeros(len(y))
+        b = np.zeros(high_range - low_range)
+        for i, item in enumerate(y):
+            c[i] = b[item - low_range - 1]
+            b[item - low_range - 1] += 1
+        idxes = c < self.few_samples
         return x[idxes], y[idxes]
 
     def _get_loader(self, x, y, memory_flags, shuffle=True, mode="train", sampler=None):

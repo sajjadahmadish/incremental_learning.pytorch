@@ -64,6 +64,11 @@ def get_parser():
     parser.add_argument("-e", "--epochs", default=70, type=int,
                         help="Number of epochs per task.")
 
+    parser.add_argument("--few_shot", action="store_true",
+                        help="train model with few samples")
+    parser.add_argument("-f", "--few_samples", default=5, type=int,
+                        help="Number of samples per class in few_shot learning")
+
     # Misc:
     parser.add_argument("--device", default=[0], type=int, nargs="+",
                         help="GPU index to use, for cpu use -1.")

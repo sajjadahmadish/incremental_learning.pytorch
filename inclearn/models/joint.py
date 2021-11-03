@@ -53,12 +53,14 @@ class Joint(IncrementalLearner):
         self._data_memory = train_loader.dataset.x[:]
         self._targets_memory = train_loader.dataset.y[:]
 
+        epoch = self._n_epochs[0] if self._task == 0 else self._n_epochs[1]
+
         loops.single_loop(
             train_loader,
             val_loader,
             self._multiple_devices,
             self._network,
-            self._n_epochs,
+            epoch,
             self._optimizer,
             scheduler=self._scheduler,
             train_function=self._forward_loss,
@@ -96,17 +98,16 @@ class Joint(IncrementalLearner):
 
     def _forward_loss(self, training_network, inputs, targets, memory_flags, metrics, **kwargs):
         inputs, targets = inputs.to(self._device), targets.to(self._device)
-        onehot_targets = utils.to_onehot(targets, self._n_classes).to(self._device)
 
         outputs = training_network(inputs)
 
         logits = outputs["logits"]
 
-        loss = F.nll_loss(logits, targets)
+        loss = F.cross_entropy(logits, targets)
         metrics["clf"] += loss.item()
 
-        if not utils.check_loss(loss):
-            raise ValueError("Loss became invalid ({}).".format(loss))
+        # if not utils.check_loss(loss):
+        #     raise ValueError("Loss became invalid ({}).".format(loss))
 
         metrics["loss"] += loss.item()
 
