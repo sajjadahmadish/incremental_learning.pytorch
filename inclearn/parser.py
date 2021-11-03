@@ -64,9 +64,9 @@ def get_parser():
     parser.add_argument("-e", "--epochs", default=70, type=int,
                         help="Number of epochs per task.")
 
-    parser.add_argument("--few_shot", action="store_true",
+    parser.add_argument("--few-shot", action="store_true",
                         help="train model with few samples")
-    parser.add_argument("-f", "--few_samples", default=5, type=int,
+    parser.add_argument("-f", "--few-samples", default=5, type=int,
                         help="Number of samples per class in few_shot learning")
 
     # Misc:
