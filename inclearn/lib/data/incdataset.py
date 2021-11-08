@@ -95,6 +95,7 @@ class IncrementalDataset:
         self._all_test_classes = all_test_classes
         self.few_samples = few_samples
         self.few_shot = few_shot
+        self.validation_split = validation_split
 
     @property
     def n_tasks(self):
@@ -115,13 +116,21 @@ class IncrementalDataset:
             self.data_train, self.targets_train, low_range=min_class, high_range=max_class
         )
 
-        if self.few_shot and self._current_task > 0:
-            x_train, y_train = self.find_few_indexes(x_train, y_train, low_range=min_class, high_range=max_class)
-
         nb_new_classes = len(np.unique(y_train))
         x_val, y_val = self._select(
             self.data_val, self.targets_val, low_range=min_class, high_range=max_class
         )
+        logger.debug(f'val uniq1: {np.unique(y_val)}')
+
+        if self.few_shot and self._current_task > 0:
+            x_train, y_train = self.find_few_indexes(x_train, y_train, low_range=min_class, high_range=max_class,
+                                                     few_samples=self.few_samples)
+            logger.debug(f'val size: {int(self.few_samples * self.validation_split)}')
+            x_val, y_val = self.find_few_indexes(x_val, y_val, low_range=min_class, high_range=max_class,
+                                                 few_samples=int(self.few_samples * self.validation_split)
+                                                 )
+            logger.debug(f'val uniq2: {y_val}')
+
         if self._all_test_classes is True:
             logger.info("Testing on all classes!")
             x_test, y_test = self._select(
@@ -251,13 +260,14 @@ class IncrementalDataset:
         idxes = np.where(np.logical_and(y >= low_range, y < high_range))[0]
         return x[idxes], y[idxes]
 
-    def find_few_indexes(self, x, y, low_range=0, high_range=0):
+    @staticmethod
+    def find_few_indexes(x, y, low_range=0, high_range=0, few_samples=None):
         c = np.zeros(len(y))
         b = np.zeros(high_range - low_range)
         for i, item in enumerate(y):
-            c[i] = b[item - low_range - 1]
-            b[item - low_range - 1] += 1
-        idxes = c < self.few_samples
+            c[i] = b[item - low_range]
+            b[item - low_range] += 1
+        idxes = c < few_samples
         return x[idxes], y[idxes]
 
     def _get_loader(self, x, y, memory_flags, shuffle=True, mode="train", sampler=None):

@@ -25,3 +25,6 @@ optimizer: adam
 epochs:
   - 2
   - 1
+
+memory_size: 40
+fixed_memory: True

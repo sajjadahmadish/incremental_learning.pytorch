@@ -80,6 +80,7 @@ class BiC(ICarl):
         )
 
         print("Compute bias correction.")
+        logger.debug("nb val {}.".format(len(val_loader.dataset)))
 
         self._bic = calibration.calibrate(
             self._network,
