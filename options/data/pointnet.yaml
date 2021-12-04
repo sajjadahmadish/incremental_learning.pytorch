@@ -1,6 +1,6 @@
 dataset: modelnet40
 
-data_path: ./data
+data_path: /content/drive/MyDrive/data
 
 convnet: pointnet
 
