@@ -3,6 +3,7 @@ import glob
 import logging
 import math
 import os
+import random
 import warnings
 
 import numpy as np
@@ -630,4 +631,33 @@ class iModelNet40(DataHandler):
 
         self.label_to_id, self.id_to_label = self._create_class_mapping(directory)
 
+        return self
+
+
+class iModelNet40Few(iModelNet40):
+
+    def base_dataset(self, root, train=True, download=False):
+        directory = os.path.join(root, 'modelnet40_ply_hdf5_2048')
+        self.data, self.targets = load_data(directory, partition='train' if train else 'test', download=download)
+
+        if train:
+            order = np.array(
+                [2, 3, 4, 10, 14, 17, 19, 21, 22, 26, 27, 28, 29, 30, 31, 32, 33, 35, 36, 39, 5, 16, 23, 25, 37, 9, 12,
+                 13, 20, 24, 0, 1, 6, 34, 38, 7, 8, 11, 15, 18])
+            o = order[20:]
+            ids = []
+            c = np.zeros(40)
+            for i, j in enumerate(self.targets):
+                if j in o:
+                    if c[j] < 5:
+                        ids.append(i)
+                        c[j] += 1
+                else:
+                    ids.append(i)
+
+            self.data = self.data[ids]
+            self.targets = self.targets[ids]
+            print(np.unique(self.targets, return_counts=True))
+
+        self.label_to_id, self.id_to_label = self._create_class_mapping(directory)
         return self

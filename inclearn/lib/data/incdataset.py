@@ -9,7 +9,7 @@ from torchvision import transforms
 
 from .datasets import (
     APY, CUB200, LAD, AwA2, ImageNet100, ImageNet100UCIR, ImageNet1000, TinyImageNet200, iCIFAR10,
-    iCIFAR100, iModelNet40
+    iCIFAR100, iModelNet40, iModelNet40Few
 )
 
 logger = logging.getLogger(__name__)
@@ -490,5 +490,7 @@ def _get_dataset(dataset_name):
         return LAD
     elif dataset_name == "modelnet40":
         return iModelNet40
+    elif dataset_name == "modelnet40_few":
+        return iModelNet40Few
     else:
         raise NotImplementedError("Unknown dataset {}.".format(dataset_name))
